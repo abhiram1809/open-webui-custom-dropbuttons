@@ -83,23 +83,25 @@
 			return;
 		}
 
-		const [res, controller] = await chatCompletion(
-			localStorage.token,
-			{
-				model: model.id,
-				stream: true,
-				messages: [
-					system
-						? {
-								role: 'system',
-								content: system
-							}
-						: undefined,
-					...messages
-				].filter((message) => message)
-			},
-			`${WEBUI_BASE_URL}/api`
-		);
+               const [res, controller] = await chatCompletion(
+                       localStorage.token,
+                       {
+                               model: model.id,
+                               stream: true,
+                               messages: [
+                                       system
+                                               ? {
+                                                               role: 'system',
+                                                               content: system
+                                                       }
+                                               : undefined,
+                                       ...messages
+                               ].filter((message) => message),
+                               operator: $settings?.params?.operator,
+                               tail: $settings?.params?.tail
+                       },
+                       `${WEBUI_BASE_URL}/api`
+               );
 
 		let responseMessage;
 		if (messages.at(-1)?.role === 'assistant') {

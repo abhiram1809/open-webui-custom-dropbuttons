@@ -7,7 +7,8 @@
 	import { getContext, tick } from 'svelte';
 	const i18n = getContext('i18n');
 
-	import { chatCompletion } from '$lib/apis/openai';
+        import { chatCompletion } from '$lib/apis/openai';
+        import { settings } from '$lib/stores';
 
 	import ChatBubble from '$lib/components/icons/ChatBubble.svelte';
 	import LightBulb from '$lib/components/icons/LightBulb.svelte';
@@ -53,21 +54,23 @@
 		].join('\n');
 		floatingInputValue = '';
 
-		responseContent = '';
-		const [res, controller] = await chatCompletion(localStorage.token, {
-			model: model,
-			messages: [
-				...messages,
-				{
-					role: 'user',
-					content: prompt
-				}
-			].map((message) => ({
-				role: message.role,
-				content: message.content
-			})),
-			stream: true // Enable streaming
-		});
+                responseContent = '';
+               const [res, controller] = await chatCompletion(localStorage.token, {
+                       model: model,
+                       messages: [
+                               ...messages,
+                               {
+                                       role: 'user',
+                                       content: prompt
+                               }
+                       ].map((message) => ({
+                               role: message.role,
+                               content: message.content
+                       })),
+                       stream: true, // Enable streaming
+                       operator: $settings?.params?.operator,
+                       tail: $settings?.params?.tail
+               });
 
 		if (res && res.ok) {
 			const reader = res.body.getReader();
@@ -133,21 +136,23 @@
 			.join('\n');
 		prompt = `${quotedText}\n\nExplain`;
 
-		responseContent = '';
-		const [res, controller] = await chatCompletion(localStorage.token, {
-			model: model,
-			messages: [
-				...messages,
-				{
-					role: 'user',
-					content: prompt
-				}
-			].map((message) => ({
-				role: message.role,
-				content: message.content
-			})),
-			stream: true // Enable streaming
-		});
+               responseContent = '';
+               const [res, controller] = await chatCompletion(localStorage.token, {
+                       model: model,
+                       messages: [
+                               ...messages,
+                               {
+                                       role: 'user',
+                                       content: prompt
+                               }
+                       ].map((message) => ({
+                               role: message.role,
+                               content: message.content
+                       })),
+                       stream: true, // Enable streaming
+                       operator: $settings?.params?.operator,
+                       tail: $settings?.params?.tail
+               });
 
 		if (res && res.ok) {
 			const reader = res.body.getReader();

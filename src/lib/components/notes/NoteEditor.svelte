@@ -237,20 +237,22 @@ ${content}
 		note.title = '';
 		titleGenerating = true;
 
-		const res = await generateOpenAIChatCompletion(
-			localStorage.token,
-			{
-				model: selectedModelId,
-				stream: false,
-				messages: [
-					{
-						role: 'user',
-						content: DEFAULT_TITLE_GENERATION_PROMPT_TEMPLATE
-					}
-				]
-			},
-			`${WEBUI_BASE_URL}/api`
-		);
+                const res = await generateOpenAIChatCompletion(
+                        localStorage.token,
+                        {
+                                model: selectedModelId,
+                                stream: false,
+                                messages: [
+                                        {
+                                                role: 'user',
+                                                content: DEFAULT_TITLE_GENERATION_PROMPT_TEMPLATE
+                                        }
+                                ],
+                                operator: $settings?.params?.operator,
+                                tail: $settings?.params?.tail
+                        },
+                        `${WEBUI_BASE_URL}/api`
+                );
 		if (res) {
 			// Step 1: Safely extract the response string
 			const response = res?.choices[0]?.message?.content ?? '';
@@ -672,28 +674,30 @@ Input will be provided within <notes> and <context> XML tags, providing a struct
 Provide the enhanced notes in markdown format. Use markdown syntax for headings, lists, task lists ([ ]) where tasks or checklists are strongly implied, and emphasis to improve clarity and presentation. Ensure that all integrated content from the context is accurately reflected. Return only the markdown formatted note.
 `;
 
-		const [res, controller] = await chatCompletion(
-			localStorage.token,
-			{
-				model: model.id,
-				stream: true,
-				messages: [
-					{
-						role: 'system',
-						content: systemPrompt
-					},
-					{
-						role: 'user',
-						content:
-							`<notes>${note.data.content.md}</notes>` +
-							(files && files.length > 0
-								? `\n<context>${files.map((file) => `${file.name}: ${file?.file?.data?.content ?? 'Could not extract content'}\n`).join('')}</context>`
-								: '')
-					}
-				]
-			},
-			`${WEBUI_BASE_URL}/api`
-		);
+                const [res, controller] = await chatCompletion(
+                        localStorage.token,
+                        {
+                                model: model.id,
+                                stream: true,
+                                messages: [
+                                        {
+                                                role: 'system',
+                                                content: systemPrompt
+                                        },
+                                        {
+                                                role: 'user',
+                                                content:
+                                                        `<notes>${note.data.content.md}</notes>` +
+                                                        (files && files.length > 0
+                                                                ? `\n<context>${files.map((file) => `${file.name}: ${file?.file?.data?.content ?? 'Could not extract content'}\n`).join('')}</context>`
+                                                                : '')
+                                        }
+                                ],
+                                operator: $settings?.params?.operator,
+                                tail: $settings?.params?.tail
+                        },
+                        `${WEBUI_BASE_URL}/api`
+                );
 
 		await tick();
 
