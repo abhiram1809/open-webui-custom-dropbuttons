@@ -37,23 +37,25 @@
 		console.log('stopResponse');
 	};
 
-	const textCompletionHandler = async () => {
-		const model = $models.find((model) => model.id === selectedModelId);
+        const textCompletionHandler = async () => {
+                const model = $models.find((model) => model.id === selectedModelId);
 
-		const [res, controller] = await chatCompletion(
-			localStorage.token,
-			{
-				model: model.id,
-				stream: true,
-				messages: [
-					{
-						role: 'assistant',
-						content: text
-					}
-				]
-			},
-			`${WEBUI_BASE_URL}/api`
-		);
+                const [res, controller] = await chatCompletion(
+                        localStorage.token,
+                        {
+                                model: model.id,
+                                stream: true,
+                                messages: [
+                                        {
+                                                role: 'assistant',
+                                                content: text
+                                        }
+                                ],
+                                operator: $settings?.params?.operator,
+                                tail: $settings?.params?.tail
+                        },
+                        `${WEBUI_BASE_URL}/api`
+                );
 
 		if (res && res.ok) {
 			const reader = res.body
