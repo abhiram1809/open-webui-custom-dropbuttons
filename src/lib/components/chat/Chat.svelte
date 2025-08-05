@@ -179,13 +179,19 @@
 						messageInput?.setText(input.prompt);
 						files = input.files;
 						selectedToolIds = input.selectedToolIds;
-						selectedFilterIds = input.selectedFilterIds;
-						webSearchEnabled = input.webSearchEnabled;
-						imageGenerationEnabled = input.imageGenerationEnabled;
-						codeInterpreterEnabled = input.codeInterpreterEnabled;
-					}
-				} catch (e) {}
-			}
+                                                selectedFilterIds = input.selectedFilterIds;
+                                                webSearchEnabled = input.webSearchEnabled;
+                                                imageGenerationEnabled = input.imageGenerationEnabled;
+                                                codeInterpreterEnabled = input.codeInterpreterEnabled;
+                                                if (input.operator !== undefined) {
+                                                        params.operator = input.operator;
+                                                }
+                                                if (input.tail !== undefined) {
+                                                        params.tail = input.tail;
+                                                }
+                                        }
+                                } catch (e) {}
+                        }
 
 			const chatInput = document.getElementById('chat-input');
 			chatInput?.focus();
@@ -493,13 +499,19 @@
 					messageInput?.setText(input.prompt);
 					files = input.files;
 					selectedToolIds = input.selectedToolIds;
-					selectedFilterIds = input.selectedFilterIds;
-					webSearchEnabled = input.webSearchEnabled;
-					imageGenerationEnabled = input.imageGenerationEnabled;
-					codeInterpreterEnabled = input.codeInterpreterEnabled;
-				}
-			} catch (e) {}
-		}
+                                        selectedFilterIds = input.selectedFilterIds;
+                                        webSearchEnabled = input.webSearchEnabled;
+                                        imageGenerationEnabled = input.imageGenerationEnabled;
+                                        codeInterpreterEnabled = input.codeInterpreterEnabled;
+                                        if (input.operator !== undefined) {
+                                                params.operator = input.operator;
+                                        }
+                                        if (input.tail !== undefined) {
+                                                params.tail = input.tail;
+                                        }
+                                }
+                        } catch (e) {}
+                }
 
 		showControls.subscribe(async (value) => {
 			if (controlPane && !$mobile) {
@@ -2170,13 +2182,14 @@
 									bind:prompt
 									bind:autoScroll
 									bind:selectedToolIds
-									bind:selectedFilterIds
-									bind:imageGenerationEnabled
-									bind:codeInterpreterEnabled
-									bind:webSearchEnabled
-									bind:atSelectedModel
-									bind:showCommands
-									toolServers={$toolServers}
+                                                                        bind:selectedFilterIds
+                                                                        bind:imageGenerationEnabled
+                                                                        bind:codeInterpreterEnabled
+                                                                        bind:webSearchEnabled
+                                                                        bind:params
+                                                                        bind:atSelectedModel
+                                                                        bind:showCommands
+                                                                        toolServers={$toolServers}
 									transparentBackground={$settings?.backgroundImageUrl ??
 										$config?.license_metadata?.background_image_url ??
 										false}
@@ -2233,15 +2246,16 @@
 									bind:prompt
 									bind:autoScroll
 									bind:selectedToolIds
-									bind:selectedFilterIds
-									bind:imageGenerationEnabled
-									bind:codeInterpreterEnabled
-									bind:webSearchEnabled
-									bind:atSelectedModel
-									bind:showCommands
-									transparentBackground={$settings?.backgroundImageUrl ??
-										$config?.license_metadata?.background_image_url ??
-										false}
+                                                                       bind:selectedFilterIds
+                                                                       bind:imageGenerationEnabled
+                                                                       bind:codeInterpreterEnabled
+                                                                       bind:webSearchEnabled
+                                                                       bind:params
+                                                                       bind:atSelectedModel
+                                                                       bind:showCommands
+                                                                       transparentBackground={$settings?.backgroundImageUrl ??
+                                                                               $config?.license_metadata?.background_image_url ??
+                                                                               false}
 									toolServers={$toolServers}
 									{stopResponse}
 									{createMessagePair}
