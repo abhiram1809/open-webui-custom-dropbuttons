@@ -179,13 +179,19 @@
 						messageInput?.setText(input.prompt);
 						files = input.files;
 						selectedToolIds = input.selectedToolIds;
-						selectedFilterIds = input.selectedFilterIds;
-						webSearchEnabled = input.webSearchEnabled;
-						imageGenerationEnabled = input.imageGenerationEnabled;
-						codeInterpreterEnabled = input.codeInterpreterEnabled;
-					}
-				} catch (e) {}
-			}
+                                                selectedFilterIds = input.selectedFilterIds;
+                                                webSearchEnabled = input.webSearchEnabled;
+                                                imageGenerationEnabled = input.imageGenerationEnabled;
+                                                codeInterpreterEnabled = input.codeInterpreterEnabled;
+                                                if (input.operator !== undefined) {
+                                                        params.operator = input.operator;
+                                                }
+                                                if (input.tail !== undefined) {
+                                                        params.tail = input.tail;
+                                                }
+                                        }
+                                } catch (e) {}
+                        }
 
 			const chatInput = document.getElementById('chat-input');
 			chatInput?.focus();
@@ -493,13 +499,19 @@
 					messageInput?.setText(input.prompt);
 					files = input.files;
 					selectedToolIds = input.selectedToolIds;
-					selectedFilterIds = input.selectedFilterIds;
-					webSearchEnabled = input.webSearchEnabled;
-					imageGenerationEnabled = input.imageGenerationEnabled;
-					codeInterpreterEnabled = input.codeInterpreterEnabled;
-				}
-			} catch (e) {}
-		}
+                                        selectedFilterIds = input.selectedFilterIds;
+                                        webSearchEnabled = input.webSearchEnabled;
+                                        imageGenerationEnabled = input.imageGenerationEnabled;
+                                        codeInterpreterEnabled = input.codeInterpreterEnabled;
+                                        if (input.operator !== undefined) {
+                                                params.operator = input.operator;
+                                        }
+                                        if (input.tail !== undefined) {
+                                                params.tail = input.tail;
+                                        }
+                                }
+                        } catch (e) {}
+                }
 
 		showControls.subscribe(async (value) => {
 			if (controlPane && !$mobile) {
@@ -1680,35 +1692,44 @@
 			}))
 			.filter((message) => message?.role === 'user' || message?.content?.trim());
 
-		const res = await generateOpenAIChatCompletion(
-			localStorage.token,
-			{
-				stream: stream,
-				model: model.id,
-				messages: messages,
-				params: {
-					...$settings?.params,
-					...params,
-					stop:
-						(params?.stop ?? $settings?.params?.stop ?? undefined)
-							? (params?.stop.split(',').map((token) => token.trim()) ?? $settings.params.stop).map(
-									(str) => decodeURIComponent(JSON.parse('"' + str.replace(/\"/g, '\\"') + '"'))
-								)
-							: undefined
-				},
+               const mergedParams = { ...$settings?.params, ...params };
+               const { operator, tail, stop, ...restParams } = mergedParams;
+               const formattedStop = stop
+                       ? stop
+                                       .split(',')
+                                       .map((token) => token.trim())
+                                       .map((str) =>
+                                               decodeURIComponent(
+                                                       JSON.parse('"' + str.replace(/\"/g, '\\"') + '"')
+                                               )
+                                       )
+                       : undefined;
 
-				files: (files?.length ?? 0) > 0 ? files : undefined,
+               const res = await generateOpenAIChatCompletion(
+                       localStorage.token,
+                       {
+                               stream: stream,
+                               model: model.id,
+                               messages: messages,
+                               operator: operator,
+                               tail: tail,
+                               params: {
+                                       ...restParams,
+                                       ...(formattedStop ? { stop: formattedStop } : {})
+                               },
 
-				filter_ids: selectedFilterIds.length > 0 ? selectedFilterIds : undefined,
-				tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
-				tool_servers: $toolServers,
+                               files: (files?.length ?? 0) > 0 ? files : undefined,
 
-				features: {
-					image_generation:
-						$config?.features?.enable_image_generation &&
-						($user?.role === 'admin' || $user?.permissions?.features?.image_generation)
-							? imageGenerationEnabled
-							: false,
+                               filter_ids: selectedFilterIds.length > 0 ? selectedFilterIds : undefined,
+                               tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
+                               tool_servers: $toolServers,
+
+                               features: {
+                                       image_generation:
+                                               $config?.features?.enable_image_generation &&
+                                               ($user?.role === 'admin' || $user?.permissions?.features?.image_generation)
+                                                       ? imageGenerationEnabled
+                                                       : false,
 					code_interpreter:
 						$config?.features?.enable_code_interpreter &&
 						($user?.role === 'admin' || $user?.permissions?.features?.code_interpreter)
@@ -2161,13 +2182,14 @@
 									bind:prompt
 									bind:autoScroll
 									bind:selectedToolIds
-									bind:selectedFilterIds
-									bind:imageGenerationEnabled
-									bind:codeInterpreterEnabled
-									bind:webSearchEnabled
-									bind:atSelectedModel
-									bind:showCommands
-									toolServers={$toolServers}
+                                                                        bind:selectedFilterIds
+                                                                        bind:imageGenerationEnabled
+                                                                        bind:codeInterpreterEnabled
+                                                                        bind:webSearchEnabled
+                                                                        bind:params
+                                                                        bind:atSelectedModel
+                                                                        bind:showCommands
+                                                                        toolServers={$toolServers}
 									transparentBackground={$settings?.backgroundImageUrl ??
 										$config?.license_metadata?.background_image_url ??
 										false}
@@ -2224,15 +2246,16 @@
 									bind:prompt
 									bind:autoScroll
 									bind:selectedToolIds
-									bind:selectedFilterIds
-									bind:imageGenerationEnabled
-									bind:codeInterpreterEnabled
-									bind:webSearchEnabled
-									bind:atSelectedModel
-									bind:showCommands
-									transparentBackground={$settings?.backgroundImageUrl ??
-										$config?.license_metadata?.background_image_url ??
-										false}
+                                                                       bind:selectedFilterIds
+                                                                       bind:imageGenerationEnabled
+                                                                       bind:codeInterpreterEnabled
+                                                                       bind:webSearchEnabled
+                                                                       bind:params
+                                                                       bind:atSelectedModel
+                                                                       bind:showCommands
+                                                                       transparentBackground={$settings?.backgroundImageUrl ??
+                                                                               $config?.license_metadata?.background_image_url ??
+                                                                               false}
 									toolServers={$toolServers}
 									{stopResponse}
 									{createMessagePair}
