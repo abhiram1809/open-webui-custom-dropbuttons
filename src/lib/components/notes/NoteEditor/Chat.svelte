@@ -184,16 +184,18 @@ Based on the user's instruction, update and enhance the existing notes or select
 			])
 		);
 
-		const [res, controller] = await chatCompletion(
-			localStorage.token,
-			{
-				model: model.id,
-				stream: true,
-				messages: chatMessages
-				// ...(files && files.length > 0 ? { files } : {}) // TODO: Decide whether to use native file handling or not
-			},
-			`${WEBUI_BASE_URL}/api`
-		);
+                const [res, controller] = await chatCompletion(
+                        localStorage.token,
+                        {
+                                model: model.id,
+                                stream: true,
+                                messages: chatMessages,
+                                // ...(files && files.length > 0 ? { files } : {}) // TODO: Decide whether to use native file handling or not
+                                operator: $settings?.params?.operator,
+                                tail: $settings?.params?.tail
+                        },
+                        `${WEBUI_BASE_URL}/api`
+                );
 
 		await tick();
 		scrollToBottom();
