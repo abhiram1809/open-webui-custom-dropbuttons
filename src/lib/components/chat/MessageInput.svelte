@@ -1780,26 +1780,29 @@
 														</button>
                                                                                                         </Tooltip>
                                                                                                 {/if}
+                                                                                                <div class="flex">
+                                                                                                        <select
+                                                                                                                bind:value={operator}
+                                                                                                                class="ml-1 px-2 @xl:px-2.5 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300 focus:outline-hidden min-w-24"
+                                                                                                        >
+                                                                                                                <option value="">{$i18n.t('Operator')}</option>
+                                                                                                                {#each operatorOptions as option}
+                                                                                                                        <option value={option}>{option}</option>
+                                                                                                                {/each}
+                                                                                                        </select>
+                                                                                                </div>
 
-                                                                                                <select
-                                                                                                        bind:value={operator}
-                                                                                                        class="ml-1 px-2 @xl:px-2.5 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300"
-                                                                                                >
-                                                                                                        <option value="">{$i18n.t('Operator')}</option>
-                                                                                                        {#each operatorOptions as option}
-                                                                                                                <option value={option}>{option}</option>
-                                                                                                        {/each}
-                                                                                                </select>
-
-                                                                                                <select
-                                                                                                        bind:value={tail}
-                                                                                                        class="ml-1 px-2 @xl:px-2.5 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300"
-                                                                                                >
-                                                                                                        <option value="">{$i18n.t('Tail')}</option>
-                                                                                                        {#each tailOptions as option}
-                                                                                                                <option value={option}>{option}</option>
-                                                                                                        {/each}
-                                                                                                </select>
+                                                                                                <div class="flex">
+                                                                                                        <select
+                                                                                                                bind:value={tail}
+                                                                                                                class="ml-1 px-2 @xl:px-2.5 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300 focus:outline-hidden min-w-24"
+                                                                                                        >
+                                                                                                                <option value="">{$i18n.t('Tail')}</option>
+                                                                                                                {#each tailOptions as option}
+                                                                                                                        <option value={option}>{option}</option>
+                                                                                                                {/each}
+                                                                                                        </select>
+                                                                                                </div>
                                                                                         </div>
                                                                                 {/if}
                                                                         </div>
