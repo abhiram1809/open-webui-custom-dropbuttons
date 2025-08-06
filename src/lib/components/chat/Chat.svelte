@@ -116,9 +116,12 @@
 	let chatIdUnsubscriber: Unsubscriber | undefined;
 
 	let selectedModels = [''];
-	let atSelectedModel: Model | undefined;
-	let selectedModelIds = [];
-	$: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
+        let atSelectedModel: Model | undefined;
+        let selectedModelIds = [];
+        $: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
+
+        const isAnthropicModel = (id: string) =>
+                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
 
 	let selectedToolIds = [];
 	let selectedFilterIds = [];
@@ -1694,6 +1697,13 @@
 
                const mergedParams = { ...$settings?.params, ...params };
                const { operator, tail, stop, ...restParams } = mergedParams;
+               const includeOperatorTail = isAnthropicModel(model.id);
+               const anthropicParams = includeOperatorTail
+                       ? {
+                               ...(operator ? { operator } : {}),
+                               ...(tail ? { tail } : {})
+                       }
+                       : {};
                const formattedStop = stop
                        ? stop
                                        .split(',')
@@ -1711,8 +1721,7 @@
                                stream: stream,
                                model: model.id,
                                messages: messages,
-                               operator: operator,
-                               tail: tail,
+                               ...anthropicParams,
                                params: {
                                        ...restParams,
                                        ...(formattedStop ? { stop: formattedStop } : {})

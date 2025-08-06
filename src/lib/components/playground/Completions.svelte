@@ -17,7 +17,10 @@
 	let loaded = false;
 	let text = '';
 
-	let selectedModelId = '';
+        let selectedModelId = '';
+
+        const isAnthropicModel = (id: string) =>
+                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
 
 	let loading = false;
 	let stopResponseFlag = false;
@@ -40,6 +43,13 @@
         const textCompletionHandler = async () => {
                 const model = $models.find((model) => model.id === selectedModelId);
 
+                const anthropicParams = isAnthropicModel(selectedModelId)
+                        ? {
+                                ...($settings?.params?.operator ? { operator: $settings?.params?.operator } : {}),
+                                ...($settings?.params?.tail ? { tail: $settings?.params?.tail } : {})
+                        }
+                        : {};
+
                 const [res, controller] = await chatCompletion(
                         localStorage.token,
                         {
@@ -51,8 +61,7 @@
                                                 content: text
                                         }
                                 ],
-                                operator: $settings?.params?.operator,
-                                tail: $settings?.params?.tail
+                                ...anthropicParams
                         },
                         `${WEBUI_BASE_URL}/api`
                 );

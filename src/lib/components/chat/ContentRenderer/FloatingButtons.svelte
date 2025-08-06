@@ -16,9 +16,12 @@
 	import Skeleton from '../Messages/Skeleton.svelte';
 
 	export let id = '';
-	export let model = null;
-	export let messages = [];
-	export let onAdd = () => {};
+       export let model = null;
+       export let messages = [];
+       export let onAdd = () => {};
+
+        const isAnthropicModel = (id: string) =>
+                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
 
 	let floatingInput = false;
 
@@ -55,6 +58,15 @@
 		floatingInputValue = '';
 
                 responseContent = '';
+               const anthropicParams = isAnthropicModel(model)
+                       ? {
+                               ...($settings?.params?.operator
+                                       ? { operator: $settings?.params?.operator }
+                                       : {}),
+                               ...($settings?.params?.tail ? { tail: $settings?.params?.tail } : {})
+                       }
+                       : {};
+
                const [res, controller] = await chatCompletion(localStorage.token, {
                        model: model,
                        messages: [
@@ -68,8 +80,7 @@
                                content: message.content
                        })),
                        stream: true, // Enable streaming
-                       operator: $settings?.params?.operator,
-                       tail: $settings?.params?.tail
+                       ...anthropicParams
                });
 
 		if (res && res.ok) {
@@ -137,6 +148,15 @@
 		prompt = `${quotedText}\n\nExplain`;
 
                responseContent = '';
+               const anthropicParams = isAnthropicModel(model)
+                       ? {
+                               ...($settings?.params?.operator
+                                       ? { operator: $settings?.params?.operator }
+                                       : {}),
+                               ...($settings?.params?.tail ? { tail: $settings?.params?.tail } : {})
+                       }
+                       : {};
+
                const [res, controller] = await chatCompletion(localStorage.token, {
                        model: model,
                        messages: [
@@ -150,8 +170,7 @@
                                content: message.content
                        })),
                        stream: true, // Enable streaming
-                       operator: $settings?.params?.operator,
-                       tail: $settings?.params?.tail
+                       ...anthropicParams
                });
 
 		if (res && res.ok) {

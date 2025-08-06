@@ -29,9 +29,12 @@
 
 	let loaded = false;
 
-	let selectedModelId = '';
-	let loading = false;
-	let stopResponseFlag = false;
+        let selectedModelId = '';
+        let loading = false;
+        let stopResponseFlag = false;
+
+        const isAnthropicModel = (id: string) =>
+                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
 
 	let systemTextareaElement: HTMLTextAreaElement;
 	let messagesContainerElement: HTMLDivElement;
@@ -83,25 +86,31 @@
 			return;
 		}
 
-               const [res, controller] = await chatCompletion(
-                       localStorage.token,
-                       {
-                               model: model.id,
-                               stream: true,
-                               messages: [
-                                       system
-                                               ? {
-                                                               role: 'system',
-                                                               content: system
-                                                       }
-                                               : undefined,
-                                       ...messages
-                               ].filter((message) => message),
-                               operator: $settings?.params?.operator,
-                               tail: $settings?.params?.tail
-                       },
-                       `${WEBUI_BASE_URL}/api`
-               );
+                const anthropicParams = isAnthropicModel(selectedModelId)
+                        ? {
+                                ...($settings?.params?.operator ? { operator: $settings?.params?.operator } : {}),
+                                ...($settings?.params?.tail ? { tail: $settings?.params?.tail } : {})
+                        }
+                        : {};
+
+                const [res, controller] = await chatCompletion(
+                        localStorage.token,
+                        {
+                                model: model.id,
+                                stream: true,
+                                messages: [
+                                        system
+                                                ? {
+                                                                role: 'system',
+                                                                content: system
+                                                        }
+                                                : undefined,
+                                        ...messages
+                                ].filter((message) => message),
+                                ...anthropicParams
+                        },
+                        `${WEBUI_BASE_URL}/api`
+                );
 
 		let responseMessage;
 		if (messages.at(-1)?.role === 'assistant') {

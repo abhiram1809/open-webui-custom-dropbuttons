@@ -112,8 +112,11 @@
 	let wordCount = 0;
 	let charCount = 0;
 
-	let versionIdx = null;
-	let selectedModelId = null;
+        let versionIdx = null;
+        let selectedModelId = null;
+
+        const isAnthropicModel = (id: string) =>
+                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
 
 	let recording = false;
 	let displayMediaRecord = false;
@@ -237,6 +240,15 @@ ${content}
 		note.title = '';
 		titleGenerating = true;
 
+                const anthropicParams = isAnthropicModel(selectedModelId)
+                        ? {
+                                ...($settings?.params?.operator
+                                        ? { operator: $settings?.params?.operator }
+                                        : {}),
+                                ...($settings?.params?.tail ? { tail: $settings?.params?.tail } : {})
+                        }
+                        : {};
+
                 const res = await generateOpenAIChatCompletion(
                         localStorage.token,
                         {
@@ -248,8 +260,7 @@ ${content}
                                                 content: DEFAULT_TITLE_GENERATION_PROMPT_TEMPLATE
                                         }
                                 ],
-                                operator: $settings?.params?.operator,
-                                tail: $settings?.params?.tail
+                                ...anthropicParams
                         },
                         `${WEBUI_BASE_URL}/api`
                 );
@@ -674,30 +685,36 @@ Input will be provided within <notes> and <context> XML tags, providing a struct
 Provide the enhanced notes in markdown format. Use markdown syntax for headings, lists, task lists ([ ]) where tasks or checklists are strongly implied, and emphasis to improve clarity and presentation. Ensure that all integrated content from the context is accurately reflected. Return only the markdown formatted note.
 `;
 
-                const [res, controller] = await chatCompletion(
-                        localStorage.token,
-                        {
-                                model: model.id,
-                                stream: true,
-                                messages: [
-                                        {
-                                                role: 'system',
-                                                content: systemPrompt
-                                        },
-                                        {
-                                                role: 'user',
-                                                content:
-                                                        `<notes>${note.data.content.md}</notes>` +
-                                                        (files && files.length > 0
-                                                                ? `\n<context>${files.map((file) => `${file.name}: ${file?.file?.data?.content ?? 'Could not extract content'}\n`).join('')}</context>`
-                                                                : '')
-                                        }
-                                ],
-                                operator: $settings?.params?.operator,
-                                tail: $settings?.params?.tail
-                        },
-                        `${WEBUI_BASE_URL}/api`
-                );
+               const anthropicParams = isAnthropicModel(selectedModelId)
+                       ? {
+                               ...($settings?.params?.operator ? { operator: $settings?.params?.operator } : {}),
+                               ...($settings?.params?.tail ? { tail: $settings?.params?.tail } : {})
+                       }
+                       : {};
+
+               const [res, controller] = await chatCompletion(
+                       localStorage.token,
+                       {
+                               model: model.id,
+                               stream: true,
+                               messages: [
+                                       {
+                                               role: 'system',
+                                               content: systemPrompt
+                                       },
+                                       {
+                                               role: 'user',
+                                               content:
+                                                       `<notes>${note.data.content.md}</notes>` +
+                                                       (files && files.length > 0
+                                                               ? `\n<context>${files.map((file) => `${file.name}: ${file?.file?.data?.content ?? 'Could not extract content'}\n`).join('')}</context>`
+                                                               : '')
+                                       }
+                               ],
+                               ...anthropicParams
+                       },
+                       `${WEBUI_BASE_URL}/api`
+               );
 
 		await tick();
 
