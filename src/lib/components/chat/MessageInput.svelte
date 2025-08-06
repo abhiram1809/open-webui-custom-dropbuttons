@@ -1780,7 +1780,6 @@
 														</button>
                                                                                                         </Tooltip>
                                                                                                 {/if}
-
                                                                                                 <div class="flex">
                                                                                                         <select
                                                                                                                 bind:value={operator}
