@@ -7,7 +7,8 @@
 	import { getContext, tick } from 'svelte';
 	const i18n = getContext('i18n');
 
-	import { chatCompletion } from '$lib/apis/openai';
+        import { chatCompletion } from '$lib/apis/openai';
+        import { settings } from '$lib/stores';
 
 	import ChatBubble from '$lib/components/icons/ChatBubble.svelte';
 	import LightBulb from '$lib/components/icons/LightBulb.svelte';
@@ -15,9 +16,12 @@
 	import Skeleton from '../Messages/Skeleton.svelte';
 
 	export let id = '';
-	export let model = null;
-	export let messages = [];
-	export let onAdd = () => {};
+       export let model = null;
+       export let messages = [];
+       export let onAdd = () => {};
+
+        const isAnthropicModel = (id: string) =>
+                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
 
 	let floatingInput = false;
 
@@ -53,21 +57,31 @@
 		].join('\n');
 		floatingInputValue = '';
 
-		responseContent = '';
-		const [res, controller] = await chatCompletion(localStorage.token, {
-			model: model,
-			messages: [
-				...messages,
-				{
-					role: 'user',
-					content: prompt
-				}
-			].map((message) => ({
-				role: message.role,
-				content: message.content
-			})),
-			stream: true // Enable streaming
-		});
+                responseContent = '';
+               const anthropicParams = isAnthropicModel(model)
+                       ? {
+                               ...($settings?.params?.operator
+                                       ? { operator: $settings?.params?.operator }
+                                       : {}),
+                               ...($settings?.params?.tail ? { tail: $settings?.params?.tail } : {})
+                       }
+                       : {};
+
+               const [res, controller] = await chatCompletion(localStorage.token, {
+                       model: model,
+                       messages: [
+                               ...messages,
+                               {
+                                       role: 'user',
+                                       content: prompt
+                               }
+                       ].map((message) => ({
+                               role: message.role,
+                               content: message.content
+                       })),
+                       stream: true, // Enable streaming
+                       ...anthropicParams
+               });
 
 		if (res && res.ok) {
 			const reader = res.body.getReader();
@@ -133,21 +147,31 @@
 			.join('\n');
 		prompt = `${quotedText}\n\nExplain`;
 
-		responseContent = '';
-		const [res, controller] = await chatCompletion(localStorage.token, {
-			model: model,
-			messages: [
-				...messages,
-				{
-					role: 'user',
-					content: prompt
-				}
-			].map((message) => ({
-				role: message.role,
-				content: message.content
-			})),
-			stream: true // Enable streaming
-		});
+               responseContent = '';
+               const anthropicParams = isAnthropicModel(model)
+                       ? {
+                               ...($settings?.params?.operator
+                                       ? { operator: $settings?.params?.operator }
+                                       : {}),
+                               ...($settings?.params?.tail ? { tail: $settings?.params?.tail } : {})
+                       }
+                       : {};
+
+               const [res, controller] = await chatCompletion(localStorage.token, {
+                       model: model,
+                       messages: [
+                               ...messages,
+                               {
+                                       role: 'user',
+                                       content: prompt
+                               }
+                       ].map((message) => ({
+                               role: message.role,
+                               content: message.content
+                       })),
+                       stream: true, // Enable streaming
+                       ...anthropicParams
+               });
 
 		if (res && res.ok) {
 			const reader = res.body.getReader();

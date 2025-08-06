@@ -48,11 +48,13 @@
 	export let selectedToolIds = [];
 	export let selectedFilterIds = [];
 
-	export let showCommands = false;
+       export let showCommands = false;
 
-	export let imageGenerationEnabled = false;
-	export let codeInterpreterEnabled = false;
-	export let webSearchEnabled = false;
+       export let imageGenerationEnabled = false;
+       export let codeInterpreterEnabled = false;
+       export let webSearchEnabled = false;
+
+        export let params = {};
 
 	export let onSelect = (e) => {};
 
@@ -213,13 +215,14 @@
 					bind:prompt
 					bind:autoScroll
 					bind:selectedToolIds
-					bind:selectedFilterIds
-					bind:imageGenerationEnabled
-					bind:codeInterpreterEnabled
-					bind:webSearchEnabled
-					bind:atSelectedModel
-					bind:showCommands
-					{toolServers}
+                                        bind:selectedFilterIds
+                                        bind:imageGenerationEnabled
+                                        bind:codeInterpreterEnabled
+                                        bind:webSearchEnabled
+                                        bind:params
+                                        bind:atSelectedModel
+                                        bind:showCommands
+                                        {toolServers}
 					{transparentBackground}
 					{stopResponse}
 					{createMessagePair}

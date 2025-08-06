@@ -85,8 +85,14 @@
 	export let atSelectedModel: Model | undefined = undefined;
 	export let selectedModels: [''];
 
-	let selectedModelIds = [];
-	$: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
+        let selectedModelIds = [];
+        $: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
+
+        const isAnthropicModel = (id: string) =>
+                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
+
+        let showOperatorTail = false;
+        $: showOperatorTail = selectedModelIds.some((id) => isAnthropicModel(id));
 
 	export let history;
 	export let taskIds = null;
@@ -101,7 +107,20 @@
 
 	export let imageGenerationEnabled = false;
 	export let webSearchEnabled = false;
-	export let codeInterpreterEnabled = false;
+        export let codeInterpreterEnabled = false;
+
+        // Forward params such as operator and tail
+        export let params = {};
+
+        // basic dropdown options; can be customized via settings if needed
+        const operatorOptions = ['openai', 'anthropic', 'mistral'];
+        const tailOptions = ['fast', 'balanced', 'quality'];
+
+        let operator = params.operator ?? '';
+        let tail = params.tail ?? '';
+
+        $: params.operator = operator;
+        $: params.tail = tail;
 
 	let showInputVariablesModal = false;
 	let inputVariables = {};
@@ -118,12 +137,15 @@
 					access_control: undefined
 				};
 			}),
-		selectedToolIds,
-		selectedFilterIds,
-		imageGenerationEnabled,
-		webSearchEnabled,
-		codeInterpreterEnabled
-	});
+                selectedToolIds,
+                selectedFilterIds,
+                imageGenerationEnabled,
+                webSearchEnabled,
+                codeInterpreterEnabled,
+                operator,
+                tail,
+                params
+        });
 
 	const inputVariableHandler = async (text: string) => {
 		inputVariables = extractInputVariables(text);
@@ -1762,11 +1784,37 @@
 																>{$i18n.t('Code Interpreter')}</span
 															>
 														</button>
-													</Tooltip>
-												{/if}
-											</div>
-										{/if}
-									</div>
+                                                                                                        </Tooltip>
+                                                                                                {/if}
+
+                                                                                                {#if showOperatorTail}
+                                                                                                        <div class="flex">
+                                                                                                                <select
+                                                                                                                        bind:value={operator}
+                                                                                                                        class="ml-1 px-2 @xl:px-2.5 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300 focus:outline-hidden min-w-24"
+                                                                                                                >
+                                                                                                                        <option value="">{$i18n.t('Operator')}</option>
+                                                                                                                        {#each operatorOptions as option}
+                                                                                                                                <option value={option}>{option}</option>
+                                                                                                                        {/each}
+                                                                                                                </select>
+                                                                                                        </div>
+
+                                                                                                        <div class="flex">
+                                                                                                                <select
+                                                                                                                        bind:value={tail}
+                                                                                                                        class="ml-1 px-2 @xl:px-2.5 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300 focus:outline-hidden min-w-24"
+                                                                                                                >
+                                                                                                                        <option value="">{$i18n.t('Tail')}</option>
+                                                                                                                        {#each tailOptions as option}
+                                                                                                                                <option value={option}>{option}</option>
+                                                                                                                        {/each}
+                                                                                                                </select>
+                                                                                                        </div>
+                                                                                                {/if}
+                                                                                        </div>
+                                                                                {/if}
+                                                                        </div>
 
 									<div class="self-end flex space-x-1 mr-1 shrink-0">
 										{#if (!history?.currentId || history.messages[history.currentId]?.done == true) && ($_user?.role === 'admin' || ($_user?.permissions?.chat?.stt ?? true))}
