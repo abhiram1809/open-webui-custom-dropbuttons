@@ -3,7 +3,10 @@
         export let selectedModelId = '';
 
         const isAnthropicModel = (id: string) =>
-                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
+			id.toLowerCase().includes('aerosummary') || 
+			id.toLowerCase().includes('claude') || 
+			id.toLowerCase().includes('sonnet') || 
+			id.toLowerCase().includes('pac');
 
 	import { marked } from 'marked';
 	// Configure marked with extensions

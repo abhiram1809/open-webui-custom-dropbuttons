@@ -116,7 +116,10 @@
         let selectedModelId = null;
 
         const isAnthropicModel = (id: string) =>
-                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
+			id.toLowerCase().includes('aerosummary') || 
+			id.toLowerCase().includes('claude') || 
+			id.toLowerCase().includes('sonnet') || 
+			id.toLowerCase().includes('pac');
 
 	let recording = false;
 	let displayMediaRecord = false;

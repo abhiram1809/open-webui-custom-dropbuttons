@@ -20,7 +20,10 @@
         let selectedModelId = '';
 
         const isAnthropicModel = (id: string) =>
-                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
+			id.toLowerCase().includes('aerosummary') || 
+			id.toLowerCase().includes('claude') || 
+			id.toLowerCase().includes('sonnet') || 
+			id.toLowerCase().includes('pac');
 
 	let loading = false;
 	let stopResponseFlag = false;

@@ -89,7 +89,10 @@
         $: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
 
         const isAnthropicModel = (id: string) =>
-                id === 'aerosummary/claude' || id?.toLowerCase().includes('claude');
+			id.toLowerCase().includes('aerosummary') || 
+			id.toLowerCase().includes('claude') || 
+			id.toLowerCase().includes('sonnet') || 
+			id.toLowerCase().includes('pac');
 
         let showOperatorTail = false;
         $: showOperatorTail = selectedModelIds.some((id) => isAnthropicModel(id));
@@ -113,8 +116,8 @@
         export let params = {};
 
         // basic dropdown options; can be customized via settings if needed
-        const operatorOptions = ['openai', 'anthropic', 'mistral'];
-        const tailOptions = ['fast', 'balanced', 'quality'];
+        const operatorOptions = ["SIA", "UAL", "ICE", "JAL", "UAE", "P4N"];
+        const tailOptions = ['9VMBA','9VMBB','9VMBC','9VMBD','9VMBE','9VMBF','9VMBG','9VMBH','9VMBI','9VMBJ','9VMBK','9VMBL','9VMBM','9VMBN','9VMBO','9VMBP','9VMBR','9VMGA','9VMGB','9VMGC','9VMGD','9VMGE','9VMGK','9VMGL','9VMGM','9VMGN','9VSCA','9VSCB','9VSCC','9VSCD','DAXXB','N11206','N12003','N12004','N12005','N12006','N12010','N12012','N12020','N12021','N12109','N12114','N12116','N12125','N12216','N12218','N12221','N12225','N12238','N13013','N13014','N13018','N13110','N13113','N13138','N13227','N13248','N13954','N14001','N14011','TFIAA','TFIAB','TFIAC','TFIAD','JA01WJ','JA01XJ','JA02WJ','JA02XJ','JA03WJ','JA03XJ','JA04WJ','JA04XJ','JA05WJ','JA05XJ','JA06WJ','JA06XJ','JA07WJ','JA07XJ','JA08WJ','JA08XJ','JA09WJ','JA09XJ','JA10WJ','JA10XJ','JA11WJ','JA11XJ','JA12WJ','JA12XJ','JA13WJ','JA14XJ','JA15XJ','JA16XJ','JA17XJ','JA18XJ','A6CJE','A6EBK','A6EBM','A6EBR','A6EBU','A6EBY','A6ECA','A6ECE','A6ECF','A6ECG','A6ECH','A6ECI','A6ECJ','A6ECK','A6ECM','A6ECO','A6ECQ','A6ECR','A6ECS','A6ECT','A6ECU','A6ECV','A6ECW','A6ECX','A6ECY','A6ECZ','A6EDF','A6EDI','A6EDJ','A6EDK','P4N29858','P4N52734','P4N97227','P4N30125','P4N21908','P4N64688','P4N62318','P4N8476','P4N15218','P4N45721','P4N85848','P4N10562','P4N54820','P4N69559','P4N26601','P4N12809','P4N57232','P4N49478','P4N60878','P4N88446','P4N81945','P4N91896','P4N22001','P4N8986','P4N17731','P4N92905','P4N9137','P4N49252','P4N14590','P4N82919'];
 
         let operator = params.operator ?? '';
         let tail = params.tail ?? '';
