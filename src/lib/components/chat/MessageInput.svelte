@@ -2,20 +2,17 @@
 	import * as pdfjs from 'pdfjs-dist';
 	import * as pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs';
 	pdfjs.GlobalWorkerOptions.workerSrc = import.meta.url + 'pdfjs-dist/build/pdf.worker.mjs';
-
 	import DOMPurify from 'dompurify';
 	import { marked } from 'marked';
 	import heic2any from 'heic2any';
-
+	import allTails from './all_tails.json';
 	import { toast } from 'svelte-sonner';
 
 	import { v4 as uuidv4 } from 'uuid';
 	import { createPicker, getAuthToken } from '$lib/utils/google-drive-picker';
 	import { pickAndDownloadFile } from '$lib/utils/onedrive-file-picker';
-
 	import { onMount, tick, getContext, createEventDispatcher, onDestroy } from 'svelte';
 	const dispatch = createEventDispatcher();
-
 	import {
 		type Model,
 		mobile,
@@ -50,13 +47,11 @@
 	import { deleteFileById } from '$lib/apis/files';
 
 	import { WEBUI_BASE_URL, WEBUI_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
-
 	import InputMenu from './MessageInput/InputMenu.svelte';
 	import VoiceRecording from './MessageInput/VoiceRecording.svelte';
 	import FilesOverlay from './MessageInput/FilesOverlay.svelte';
 	import Commands from './MessageInput/Commands.svelte';
 	import ToolServersModal from './ToolServersModal.svelte';
-
 	import RichTextInput from '../common/RichTextInput.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import FileItem from '../common/FileItem.svelte';
@@ -73,7 +68,6 @@
 	import { KokoroWorker } from '$lib/workers/KokoroWorker';
 	import InputVariablesModal from './MessageInput/InputVariablesModal.svelte';
 	const i18n = getContext('i18n');
-
 	export let transparentBackground = false;
 
 	export let onChange: Function = () => {};
@@ -87,15 +81,14 @@
 
         let selectedModelIds = [];
         $: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
-
-        const isAnthropicModel = (id: string) =>
+	const isAnthropicModel = (id: string) =>
 			id.toLowerCase().includes('aerosummary') || 
 			id.toLowerCase().includes('claude') || 
 			id.toLowerCase().includes('sonnet') || 
 			id.toLowerCase().includes('pac');
 
         let showOperatorTail = false;
-        $: showOperatorTail = selectedModelIds.some((id) => isAnthropicModel(id));
+	$: showOperatorTail = selectedModelIds.some((id) => isAnthropicModel(id));
 
 	export let history;
 	export let taskIds = null;
@@ -107,20 +100,27 @@
 
 	export let selectedToolIds = [];
 	export let selectedFilterIds = [];
-
 	export let imageGenerationEnabled = false;
 	export let webSearchEnabled = false;
         export let codeInterpreterEnabled = false;
-
-        // Forward params such as operator and tail
+	// Forward params such as operator and tail
         export let params = {};
-
-        // basic dropdown options; can be customized via settings if needed
-        const operatorOptions = ["SIA", "UAL", "ICE", "JAL", "UAE", "P4N"];
-        const tailOptions = ['9VMBA','9VMBB','9VMBC','9VMBD','9VMBE','9VMBF','9VMBG','9VMBH','9VMBI','9VMBJ','9VMBK','9VMBL','9VMBM','9VMBN','9VMBO','9VMBP','9VMBR','9VMGA','9VMGB','9VMGC','9VMGD','9VMGE','9VMGK','9VMGL','9VMGM','9VMGN','9VSCA','9VSCB','9VSCC','9VSCD','DAXXB','N11206','N12003','N12004','N12005','N12006','N12010','N12012','N12020','N12021','N12109','N12114','N12116','N12125','N12216','N12218','N12221','N12225','N12238','N13013','N13014','N13018','N13110','N13113','N13138','N13227','N13248','N13954','N14001','N14011','TFIAA','TFIAB','TFIAC','TFIAD','JA01WJ','JA01XJ','JA02WJ','JA02XJ','JA03WJ','JA03XJ','JA04WJ','JA04XJ','JA05WJ','JA05XJ','JA06WJ','JA06XJ','JA07WJ','JA07XJ','JA08WJ','JA08XJ','JA09WJ','JA09XJ','JA10WJ','JA10XJ','JA11WJ','JA11XJ','JA12WJ','JA12XJ','JA13WJ','JA14XJ','JA15XJ','JA16XJ','JA17XJ','JA18XJ','A6CJE','A6EBK','A6EBM','A6EBR','A6EBU','A6EBY','A6ECA','A6ECE','A6ECF','A6ECG','A6ECH','A6ECI','A6ECJ','A6ECK','A6ECM','A6ECO','A6ECQ','A6ECR','A6ECS','A6ECT','A6ECU','A6ECV','A6ECW','A6ECX','A6ECY','A6ECZ','A6EDF','A6EDI','A6EDJ','A6EDK','P4N29858','P4N52734','P4N97227','P4N30125','P4N21908','P4N64688','P4N62318','P4N8476','P4N15218','P4N45721','P4N85848','P4N10562','P4N54820','P4N69559','P4N26601','P4N12809','P4N57232','P4N49478','P4N60878','P4N88446','P4N81945','P4N91896','P4N22001','P4N8986','P4N17731','P4N92905','P4N9137','P4N49252','P4N14590','P4N82919'];
+	// basic dropdown options; can be customized via settings if needed
+        const operatorOptions = Object.keys(allTails);
+        let tailOptions = [];
 
         let operator = params.operator ?? '';
         let tail = params.tail ?? '';
+
+        // This reactive statement populates tailOptions based on the selected operator.
+        // It creates a one-way data flow: operator -> tailOptions.
+        $: tailOptions = operator && allTails[operator] ? allTails[operator] : [];
+
+        // This watches for changes. If the selected `tail` is no longer in the new
+        // list of `tailOptions`, it gets reset. This prevents invalid states.
+        $: if (tail && !tailOptions.includes(tail)) {
+                tail = '';
+        }
 
         $: params.operator = operator;
         $: params.tail = tail;
@@ -128,7 +128,6 @@
 	let showInputVariablesModal = false;
 	let inputVariables = {};
 	let inputVariableValues = {};
-
 	$: onChange({
 		prompt,
 		files: files
@@ -145,26 +144,24 @@
                 imageGenerationEnabled,
                 webSearchEnabled,
                 codeInterpreterEnabled,
-                operator,
+         
+               operator,
                 tail,
                 params
         });
-
 	const inputVariableHandler = async (text: string) => {
 		inputVariables = extractInputVariables(text);
 		if (Object.keys(inputVariables).length > 0) {
 			showInputVariablesModal = true;
 		}
 	};
-
 	const textVariableHandler = async (text: string) => {
 		if (text.includes('{{CLIPBOARD}}')) {
 			const clipboardText = await navigator.clipboard.readText().catch((err) => {
 				toast.error($i18n.t('Failed to read clipboard contents'));
 				return '{{CLIPBOARD}}';
 			});
-
-			const clipboardItems = await navigator.clipboard.read();
+	const clipboardItems = await navigator.clipboard.read();
 
 			let imageUrl = null;
 			for (const item of clipboardItems) {
@@ -192,14 +189,14 @@
 
 		if (text.includes('{{USER_LOCATION}}')) {
 			let location;
-			try {
+	try {
 				location = await getUserPosition();
 			} catch (error) {
 				toast.error($i18n.t('Location access not allowed'));
 				location = 'LOCATION_UNKNOWN';
 			}
 			text = text.replaceAll('{{USER_LOCATION}}', String(location));
-		}
+	}
 
 		if (text.includes('{{USER_NAME}}')) {
 			const name = $_user?.name || 'User';
@@ -239,19 +236,18 @@
 		inputVariableHandler(text);
 		return text;
 	};
-
 	const replaceVariables = (variables: Record<string, any>) => {
 		console.log('Replacing variables:', variables);
 
 		const chatInput = document.getElementById('chat-input');
-
 		if (chatInput) {
 			if ($settings?.richTextInput ?? true) {
 				chatInputElement.replaceVariables(variables);
 				chatInputElement.focus();
 			} else {
 				// Get current value from the input element
-				let currentValue = chatInput.value || '';
+				let currentValue = chatInput.value ||
+	'';
 
 				// Replace template variables using regex
 				const updatedValue = currentValue.replace(
@@ -263,7 +259,6 @@
 							: match;
 					}
 				);
-
 				// Update the input value
 				chatInput.value = updatedValue;
 				chatInput.focus();
@@ -271,13 +266,11 @@
 			}
 		}
 	};
-
 	export const setText = async (text?: string) => {
 		const chatInput = document.getElementById('chat-input');
 
 		if (chatInput) {
 			text = await textVariableHandler(text || '');
-
 			if ($settings?.richTextInput ?? true) {
 				chatInputElement?.setText(text);
 				chatInputElement?.focus();
@@ -290,7 +283,6 @@
 			}
 		}
 	};
-
 	const getCommand = () => {
 		const getWordAtCursor = (text, cursor) => {
 			if (typeof text !== 'string' || cursor == null) return '';
@@ -298,13 +290,13 @@
 			const right = text.slice(cursor);
 			const leftWord = left.match(/(?:^|\s)([^\s]*)$/)?.[1] || '';
 
-			const rightWord = right.match(/^([^\s]*)/)?.[1] || '';
+			const rightWord = right.match(/^([^\s]*)/)?.[1] ||
+	'';
 			return leftWord + rightWord;
 		};
 
 		const chatInput = document.getElementById('chat-input');
 		let word = '';
-
 		if (chatInput) {
 			if ($settings?.richTextInput ?? true) {
 				word = chatInputElement?.getWordAtDocPos();
@@ -339,13 +331,11 @@
 			chatInput.setSelectionRange(start + text.length, start + text.length);
 		}
 	};
-
 	const insertTextAtCursor = async (text: string) => {
 		const chatInput = document.getElementById('chat-input');
 		if (!chatInput) return;
 
 		text = await textVariableHandler(text);
-
 		if (command) {
 			replaceCommandWithText(text);
 		} else {
@@ -371,16 +361,13 @@
 			chatInput.dispatchEvent(new Event('input'));
 
 			const words = extractCurlyBraceWords(prompt);
-
 			if (words.length > 0) {
 				const word = words.at(0);
 				await tick();
-
 				if (!($settings?.richTextInput ?? true)) {
 					// Move scroll to the first word
 					chatInput.setSelectionRange(word.startIndex, word.endIndex + 1);
 					chatInput.focus();
-
 					const selectionRow =
 						(word?.startIndex - (word?.startIndex % chatInput.cols)) / chatInput.cols;
 					const lineHeight = chatInput.clientHeight / chatInput.rows;
@@ -412,28 +399,23 @@
 	let commandsElement;
 
 	let inputFiles;
-
 	let dragged = false;
 	let shiftKey = false;
 
 	let user = null;
 	export let placeholder = '';
-
 	let visionCapableModels = [];
 	$: visionCapableModels = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
 	);
-
 	let fileUploadCapableModels = [];
 	$: fileUploadCapableModels = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.file_upload ?? true
 	);
-
 	let webSearchCapableModels = [];
 	$: webSearchCapableModels = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.web_search ?? true
 	);
-
 	let imageGenerationCapableModels = [];
 	$: imageGenerationCapableModels = (
 		atSelectedModel?.id ? [atSelectedModel.id] : selectedModels
@@ -441,7 +423,6 @@
 		(model) =>
 			$models.find((m) => m.id === model)?.info?.meta?.capabilities?.image_generation ?? true
 	);
-
 	let codeInterpreterCapableModels = [];
 	$: codeInterpreterCapableModels = (
 		atSelectedModel?.id ? [atSelectedModel.id] : selectedModels
@@ -449,12 +430,10 @@
 		(model) =>
 			$models.find((m) => m.id === model)?.info?.meta?.capabilities?.code_interpreter ?? true
 	);
-
 	let toggleFilters = [];
 	$: toggleFilters = (atSelectedModel?.id ? [atSelectedModel.id] : selectedModels)
 		.map((id) => ($models.find((model) => model.id === id) || {})?.filters ?? [])
 		.reduce((acc, filters) => acc.filter((f1) => filters.some((f2) => f2.id === f1.id)));
-
 	let showToolsButton = false;
 	$: showToolsButton = toolServers.length + selectedToolIds.length > 0;
 
@@ -478,7 +457,6 @@
 			codeInterpreterCapableModels.length &&
 		$config?.features?.enable_code_interpreter &&
 		($_user.role === 'admin' || $_user?.permissions?.features?.code_interpreter);
-
 	const scrollToBottom = () => {
 		const element = document.getElementById('messages-container');
 		element.scrollTo({
@@ -486,7 +464,6 @@
 			behavior: 'smooth'
 		});
 	};
-
 	const screenCaptureHandler = async () => {
 		try {
 			// Request screen media
@@ -508,10 +485,8 @@
 			context.drawImage(video, 0, 0, canvas.width, canvas.height);
 			// Stop all video tracks (stop screen sharing) after capturing the image
 			mediaStream.getTracks().forEach((track) => track.stop());
-
 			// bring back focus to this current tab, so that the user can see the screen capture
 			window.focus();
-
 			// Convert the canvas to a Base64 image URL
 			const imageUrl = canvas.toDataURL('image/png');
 			// Add the captured image to the files array to render it
@@ -549,14 +524,12 @@
 			itemId: tempItemId,
 			...(fullContext ? { context: 'full' } : {})
 		};
-
 		if (fileItem.size == 0) {
 			toast.error($i18n.t('You cannot upload an empty file.'));
 			return null;
 		}
 
 		files = [...files, fileItem];
-
 		if (!$temporaryChatEnabled) {
 			try {
 				// If the file is an audio file, provide the language for STT.
@@ -579,7 +552,6 @@
 						name: fileItem.name,
 						collection: uploadedFile?.meta?.collection_name
 					});
-
 					if (uploadedFile.error) {
 						console.warn('File upload warning:', uploadedFile.error);
 						toast.warning(uploadedFile.error);
@@ -602,14 +574,12 @@
 			}
 		} else {
 			// If temporary chat is enabled, we just add the file to the list without uploading it.
-
 			const content = await extractContentFromFile(file, pdfjsLib).catch((error) => {
 				toast.error(
 					$i18n.t('Failed to extract content from the file: {{error}}', { error: error })
 				);
 				return null;
 			});
-
 			if (content === null) {
 				toast.error($i18n.t('Failed to extract content from the file.'));
 				files = files.filter((item) => item?.itemId !== tempItemId);
@@ -630,10 +600,8 @@
 			}
 		}
 	};
-
 	const inputFilesHandler = async (inputFiles) => {
 		console.log('Input files handler called with:', inputFiles);
-
 		if (
 			($config?.file?.max_count ?? null) !== null &&
 			files.length + inputFiles.length > $config?.file?.max_count
@@ -681,7 +649,6 @@
 					const settingsCompression = settings?.imageCompression ?? false;
 					const configWidth = config?.file?.image_compression?.width ?? null;
 					const configHeight = config?.file?.image_compression?.height ?? null;
-
 					// If neither settings nor config wants compression, return original URL.
 					if (!settingsCompression && !configWidth && !configHeight) {
 						return imageUrl;
@@ -690,11 +657,11 @@
 					// Default to null (no compression unless set)
 					let width = null;
 					let height = null;
-
 					// If user/settings want compression, pick their preferred size.
 					if (settingsCompression) {
 						width = settings?.imageCompressionSize?.width ?? null;
-						height = settings?.imageCompressionSize?.height ?? null;
+						height = settings?.imageCompressionSize?.height ??
+					null;
 					}
 
 					// Apply config limits as an upper bound if any
@@ -711,13 +678,11 @@
 					}
 					return imageUrl;
 				};
-
 				let reader = new FileReader();
 				reader.onload = async (event) => {
 					let imageUrl = event.target.result;
 
 					imageUrl = await compressImageHandler(imageUrl, $settings, $config);
-
 					files = [
 						...files,
 						{
@@ -751,7 +716,6 @@
 	const onDragLeave = () => {
 		dragged = false;
 	};
-
 	const onDrop = async (e) => {
 		e.preventDefault();
 		console.log(e);
@@ -766,7 +730,6 @@
 
 		dragged = false;
 	};
-
 	const onKeyDown = (e) => {
 		if (e.key === 'Shift') {
 			shiftKey = true;
@@ -785,7 +748,6 @@
 	};
 
 	const onFocus = () => {};
-
 	const onBlur = () => {
 		shiftKey = false;
 	};
@@ -812,7 +774,6 @@
 		dropzoneElement?.addEventListener('drop', onDrop);
 		dropzoneElement?.addEventListener('dragleave', onDragLeave);
 	});
-
 	onDestroy(() => {
 		console.log('destroy');
 		window.removeEventListener('keydown', onKeyDown);
@@ -922,7 +883,6 @@
 						insertTextHandler={insertTextAtCursor}
 						onUpload={(e) => {
 							const { type, data } = e;
-
 							if (type === 'file') {
 								if (files.find((f) => f.id === data.id)) {
 									return;
@@ -996,9 +956,8 @@
 
 								await tick();
 								document.getElementById('chat-input')?.focus();
-
 								if ($settings?.speechAutoSend ?? false) {
-									dispatch('submit', prompt);
+									dispatch('submit', { prompt, params });
 								}
 							}}
 						/>
@@ -1007,12 +966,13 @@
 							class="w-full flex flex-col gap-1.5"
 							on:submit|preventDefault={() => {
 								// check if selectedModels support image input
-								dispatch('submit', prompt);
+								dispatch('submit', { prompt, params });
 							}}
 						>
 							<div
 								class="flex-1 flex flex-col relative w-full shadow-lg rounded-3xl border border-gray-50 dark:border-gray-850 hover:border-gray-100 focus-within:border-gray-100 hover:dark:border-gray-800 focus-within:dark:border-gray-800 transition px-1 bg-white/90 dark:bg-gray-400/5 dark:text-gray-100"
-								dir={$settings?.chatDirection ?? 'auto'}
+								dir={$settings?.chatDirection ??
+									'auto'}
 							>
 								{#if files.length > 0}
 									<div class="mx-2 mt-2.5 -mb-1 flex items-center flex-wrap gap-2">
@@ -1025,7 +985,8 @@
 															alt=""
 															imageClassName=" size-14 rounded-xl object-cover"
 														/>
-														{#if atSelectedModel ? visionCapableModels.length === 0 : selectedModels.length !== visionCapableModels.length}
+														{#if atSelectedModel ?
+															visionCapableModels.length === 0 : selectedModels.length !== visionCapableModels.length}
 															<Tooltip
 																className=" absolute top-1 left-1"
 																content={$i18n.t('{{ models }}', {
@@ -1055,7 +1016,7 @@
 													<div class=" absolute -top-1 -right-1">
 														<button
 															class=" bg-white text-black border border-white rounded-full {($settings?.highContrastMode ??
-															false)
+																false)
 																? ''
 																: 'outline-hidden focus:outline-hidden group-hover:visible invisible transition'}"
 															type="button"
@@ -1104,7 +1065,8 @@
 								{/if}
 
 								<div class="px-2.5">
-									{#if $settings?.richTextInput ?? true}
+									{#if $settings?.richTextInput ??
+										true}
 										<div
 											class="scrollbar-hidden rtl:text-right ltr:text-left bg-transparent dark:text-gray-100 outline-hidden w-full pt-2.5 pb-[5px] px-1 resize-none h-fit max-h-80 overflow-auto"
 											id="chat-input-container"
@@ -1127,7 +1089,8 @@
 															navigator.maxTouchPoints > 0 ||
 															navigator.msMaxTouchPoints > 0
 														))}
-												placeholder={placeholder ? placeholder : $i18n.t('Send a Message')}
+												placeholder={placeholder ?
+													placeholder : $i18n.t('Send a Message')}
 												largeTextAsFile={($settings?.largeTextAsFile ?? false) && !shiftKey}
 												autocomplete={$config?.features?.enable_autocomplete_generation &&
 													($settings?.promptAutocomplete ?? false)}
@@ -1157,7 +1120,8 @@
 												on:keydown={async (e) => {
 													e = e.detail.event;
 
-													const isCtrlPressed = e.ctrlKey || e.metaKey; // metaKey is for Cmd key on Mac
+													const isCtrlPressed = e.ctrlKey || e.metaKey;
+													// metaKey is for Cmd key on Mac
 													const commandsContainerElement =
 														document.getElementById('commands-container');
 
@@ -1175,7 +1139,6 @@
 													if (prompt === '' && isCtrlPressed && e.key.toLowerCase() === 'r') {
 														e.preventDefault();
 														console.log('regenerate');
-
 														const regenerateButton = [
 															...document.getElementsByClassName('regenerate-response-button')
 														]?.at(-1);
@@ -1189,7 +1152,6 @@
 														const userMessageElement = [
 															...document.getElementsByClassName('user-message')
 														]?.at(-1);
-
 														if (userMessageElement) {
 															userMessageElement.scrollIntoView({ block: 'center' });
 															const editButton = [
@@ -1214,7 +1176,6 @@
 														if (commandsContainerElement && e.key === 'ArrowDown') {
 															e.preventDefault();
 															commandsElement.selectDown();
-
 															const commandOptionButton = [
 																...document.getElementsByClassName('selected-command-option-button')
 															]?.at(-1);
@@ -1265,11 +1226,10 @@
 																($settings?.ctrlEnterToSend ?? false)
 																	? (e.key === 'Enter' || e.keyCode === 13) && isCtrlPressed
 																	: (e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey;
-
 															if (enterPressed) {
 																e.preventDefault();
 																if (prompt !== '' || files.length > 0) {
-																	dispatch('submit', prompt);
+																	dispatch('submit', { prompt, params });
 																}
 															}
 														}
@@ -1291,7 +1251,6 @@
 													console.log(e);
 
 													const clipboardData = e.clipboardData || window.clipboardData;
-
 													if (clipboardData && clipboardData.items) {
 														for (const item of clipboardData.items) {
 															if (item.type.indexOf('image') !== -1) {
@@ -1319,7 +1278,6 @@
 															} else if (item.type === 'text/plain') {
 																if (($settings?.largeTextAsFile ?? false) && !shiftKey) {
 																	const text = clipboardData.getData('text/plain');
-
 																	if (text.length > PASTED_TEXT_CHARACTER_LIMIT) {
 																		e.preventDefault();
 																		const blob = new Blob([text], { type: 'text/plain' });
@@ -1339,7 +1297,8 @@
 									{:else}
 										<textarea
 											id="chat-input"
-											dir={$settings?.chatDirection ?? 'auto'}
+											dir={$settings?.chatDirection ??
+												'auto'}
 											bind:this={chatInputElement}
 											class="scrollbar-hidden bg-transparent dark:text-gray-200 outline-hidden w-full pt-3 px-1 resize-none"
 											placeholder={placeholder ? placeholder : $i18n.t('Send a Message')}
@@ -1353,7 +1312,8 @@
 											on:compositionstart={() => (isComposing = true)}
 											on:compositionend={() => (isComposing = false)}
 											on:keydown={async (e) => {
-												const isCtrlPressed = e.ctrlKey || e.metaKey; // metaKey is for Cmd key on Mac
+												const isCtrlPressed = e.ctrlKey ||
+													e.metaKey; // metaKey is for Cmd key on Mac
 
 												const commandsContainerElement =
 													document.getElementById('commands-container');
@@ -1372,7 +1332,6 @@
 												if (prompt === '' && isCtrlPressed && e.key.toLowerCase() === 'r') {
 													e.preventDefault();
 													console.log('regenerate');
-
 													const regenerateButton = [
 														...document.getElementsByClassName('regenerate-response-button')
 													]?.at(-1);
@@ -1386,7 +1345,6 @@
 													const userMessageElement = [
 														...document.getElementsByClassName('user-message')
 													]?.at(-1);
-
 													const editButton = [
 														...document.getElementsByClassName('edit-user-message-button')
 													]?.at(-1);
@@ -1401,7 +1359,6 @@
 													if (commandsContainerElement && e.key === 'ArrowUp') {
 														e.preventDefault();
 														commandsElement.selectUp();
-
 														const container = document.getElementById('command-options-container');
 														const commandOptionButton = [
 															...document.getElementsByClassName('selected-command-option-button')
@@ -1425,12 +1382,10 @@
 														const commandOptionButton = [
 															...document.getElementsByClassName('selected-command-option-button')
 														]?.at(-1);
-
 														if (commandOptionButton && container) {
 															const elTop = commandOptionButton.offsetTop;
 															const elHeight = commandOptionButton.offsetHeight;
 															const containerHeight = container.clientHeight;
-
 															// Center the selected button in the container
 															container.scrollTop = elTop - containerHeight / 2 + elHeight / 2;
 														}
@@ -1478,16 +1433,16 @@
 														const isCtrlPressed = e.ctrlKey || e.metaKey;
 														const enterPressed =
 															($settings?.ctrlEnterToSend ?? false)
-																? (e.key === 'Enter' || e.keyCode === 13) && isCtrlPressed
+																?
+																(e.key === 'Enter' || e.keyCode === 13) && isCtrlPressed
 																: (e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey;
-
 														if (enterPressed) {
 															e.preventDefault();
 														}
 
 														// Submit the prompt when Enter key is pressed
 														if ((prompt !== '' || files.length > 0) && enterPressed) {
-															dispatch('submit', prompt);
+															dispatch('submit', { prompt, params });
 														}
 													}
 												}
@@ -1497,13 +1452,11 @@
 
 													if (words.length > 0) {
 														const word = words.at(0);
-
 														if (word && e.target instanceof HTMLTextAreaElement) {
 															// Prevent default tab behavior
 															e.preventDefault();
 															e.target.setSelectionRange(word?.startIndex, word.endIndex + 1);
 															e.target.focus();
-
 															const selectionRow =
 																(word?.startIndex - (word?.startIndex % e.target.cols)) /
 																e.target.cols;
@@ -1545,7 +1498,6 @@
 														if (item.type.indexOf('image') !== -1) {
 															const blob = item.getAsFile();
 															const reader = new FileReader();
-
 															reader.onload = function (e) {
 																files = [
 																	...files,
@@ -1567,7 +1519,6 @@
 														} else if (item.type === 'text/plain') {
 															if (($settings?.largeTextAsFile ?? false) && !shiftKey) {
 																const text = clipboardData.getData('text/plain');
-
 																if (text.length > PASTED_TEXT_CHARACTER_LIMIT) {
 																	e.preventDefault();
 																	const blob = new Blob([text], { type: 'text/plain' });
@@ -1590,7 +1541,8 @@
 									<div class="ml-1 self-end flex items-center flex-1 max-w-[80%]">
 										<InputMenu
 											bind:selectedToolIds
-											selectedModels={atSelectedModel ? [atSelectedModel.id] : selectedModels}
+											selectedModels={atSelectedModel ?
+												[atSelectedModel.id] : selectedModels}
 											{fileUploadCapableModels}
 											{screenCaptureHandler}
 											{inputFilesHandler}
@@ -1634,7 +1586,6 @@
 											}}
 											onClose={async () => {
 												await tick();
-
 												const chatInput = document.getElementById('chat-input');
 												chatInput?.focus();
 											}}
@@ -1752,7 +1703,8 @@
 																(imageGenerationEnabled = !imageGenerationEnabled)}
 															type="button"
 															class="px-2 @xl:px-2.5 py-2 flex gap-1.5 items-center text-sm rounded-full transition-colors duration-300 focus:outline-hidden max-w-full overflow-hidden hover:bg-gray-50 dark:hover:bg-gray-800 {imageGenerationEnabled
-																? ' text-sky-500 dark:text-sky-300 bg-sky-50 dark:bg-sky-200/5'
+																?
+																' text-sky-500 dark:text-sky-300 bg-sky-50 dark:bg-sky-200/5'
 																: 'bg-transparent text-gray-600 dark:text-gray-300 '}"
 														>
 															<Photo className="size-4" strokeWidth="1.75" />
@@ -1775,10 +1727,12 @@
 																(codeInterpreterEnabled = !codeInterpreterEnabled)}
 															type="button"
 															class="px-2 @xl:px-2.5 py-2 flex gap-1.5 items-center text-sm transition-colors duration-300 max-w-full overflow-hidden hover:bg-gray-50 dark:hover:bg-gray-800 {codeInterpreterEnabled
-																? ' text-sky-500 dark:text-sky-300 bg-sky-50 dark:bg-sky-200/5'
+																?
+																' text-sky-500 dark:text-sky-300 bg-sky-50 dark:bg-sky-200/5'
 																: 'bg-transparent text-gray-600 dark:text-gray-300 '} {($settings?.highContrastMode ??
 															false)
-																? 'm-1'
+																?
+																'm-1'
 																: 'focus:outline-hidden rounded-full'}"
 														>
 															<CommandLine className="size-4" strokeWidth="1.75" />
@@ -1787,41 +1741,73 @@
 																>{$i18n.t('Code Interpreter')}</span
 															>
 														</button>
-                                                                                                        </Tooltip>
-                                                                                                {/if}
+                                                                                        
+                                                </Tooltip>
+                                                                                    
+                                            {/if}
 
-                                                                                                {#if showOperatorTail}
-                                                                                                        <div class="flex">
-                                                                                                                <select
-                                                                                                                        bind:value={operator}
-                                                                                                                        class="ml-1 px-2 @xl:px-2.5 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300 focus:outline-hidden min-w-24"
-                                                                                                                >
-                                                                                                                        <option value="">{$i18n.t('Operator')}</option>
-                                                                                                                        {#each operatorOptions as option}
-                                                                                                                                <option value={option}>{option}</option>
-                                                                                                                        {/each}
-                                                                                                                </select>
-                                                                                                        </div>
+                                                                                        
+                                        {#if showOperatorTail}
+                                                                                           
+                                             <div class="flex">
+                                                                                      
+                                                          <select
+                                                                          
+                                                                              bind:value={operator}
+                                                      
+                                                                                                  class="ml-1 px-2 @xl:px-2.5 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300 focus:outline-hidden min-w-24"
+                     
+                                                                                                                           >
+         
+                                                                                                                                    
+                                                                                                         <option value="">{$i18n.t('Operator')}</option>
+                                                                                        
+                                                                {#each operatorOptions as option}
+                                                                 
+                                                                                               <option value={option}>{option}</option>
+                                    
+                                                                                                                    {/each}
+                
+                                                                                                                                </select>
+    
+                                                                                                    
+                                                                                                     </div>
 
-                                                                                                        <div class="flex">
-                                                                                                                <select
-                                                                                                                        bind:value={tail}
-                                                                                                                        class="ml-1 px-2 @xl:px-2.5 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300 focus:outline-hidden min-w-24"
-                                                                                                                >
-                                                                                                                        <option value="">{$i18n.t('Tail')}</option>
-                                                                                                                        {#each tailOptions as option}
-                                                                                                                                <option value={option}>{option}</option>
-                                                                                                                        {/each}
-                                                                                                                </select>
-                                                                                                        </div>
-                                                                                                {/if}
-                                                                                        </div>
-                                                                                {/if}
-                                                                        </div>
+                                                                                                    
+                                                                    <div class="flex">
+                                                                                               
+                                                                                 <select
+                                                                                   
+                                                                                      bind:value={tail}
+                                                               
+                                                                                                         class="ml-1 px-2 @xl:px-2.5 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-600 dark:text-gray-300 focus:outline-hidden min-w-24"
+                              
+                                                                                                                   >
+                  
+                                                                                                                                    
+                                                                                                 <option value="">{$i18n.t('Tail')}</option>
+                                                                                                 
+                                                                                       {#each tailOptions as option}
+                                                                          
+                                                                                                      <option value={option}>{option}</option>
+                                             
+                                                                                                            {/each}
+                         
+                                                                                                                        </select>
+             
+                                                                                                                            </div>
+         
+                                                                                                                       {/if}
+             
+                                                                                                           </div>
+                         
+                                                                                        {/if}
+                                             
+                                                            </div>
 
 									<div class="self-end flex space-x-1 mr-1 shrink-0">
-										{#if (!history?.currentId || history.messages[history.currentId]?.done == true) && ($_user?.role === 'admin' || ($_user?.permissions?.chat?.stt ?? true))}
-											<!-- {$i18n.t('Record voice')} -->
+										{#if (!history?.currentId ||
+											history.messages[history.currentId]?.done == true) && ($_user?.role === 'admin' || ($_user?.permissions?.chat?.stt ?? true))}
 											<Tooltip content={$i18n.t('Dictate')}>
 												<button
 													id="voice-input-button"
@@ -1842,7 +1828,6 @@
 																	);
 																	return null;
 																});
-
 															if (stream) {
 																recording = true;
 																const tracks = stream.getTracks();
@@ -1870,7 +1855,8 @@
 											</Tooltip>
 										{/if}
 
-										{#if (taskIds && taskIds.length > 0) || (history.currentId && history.messages[history.currentId]?.done != true)}
+										{#if (taskIds && taskIds.length > 0) ||
+											(history.currentId && history.messages[history.currentId]?.done != true)}
 											<div class=" flex items-center">
 												<Tooltip content={$i18n.t('Stop')}>
 													<button
@@ -1896,7 +1882,6 @@
 											</div>
 										{:else if prompt === '' && files.length === 0 && ($_user?.role === 'admin' || ($_user?.permissions?.chat?.call ?? true))}
 											<div class=" flex items-center">
-												<!-- {$i18n.t('Call')} -->
 												<Tooltip content={$i18n.t('Voice mode')}>
 													<button
 														class=" bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full p-1.5 self-center"
@@ -1904,7 +1889,6 @@
 														on:click={async () => {
 															if (selectedModels.length > 1) {
 																toast.error($i18n.t('Select only one model to call'));
-
 																return;
 															}
 
@@ -1937,7 +1921,6 @@
 																				dtype: $settings.audio?.tts?.engineConfig?.dtype ?? 'fp32'
 																			})
 																		);
-
 																		await $TTSWorker.init();
 																	}
 																}

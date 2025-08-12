@@ -2231,12 +2231,15 @@
 										}
 									}}
 									on:submit={async (e) => {
-										if (e.detail || files.length > 0) {
+										const { prompt: userPrompt, params: newParams } = e.detail;
+
+										if (userPrompt || files.length > 0) {
+											params = newParams; // Explicitly update the parent's params state
 											await tick();
 											submitPrompt(
 												($settings?.richTextInput ?? true)
-													? e.detail.replaceAll('\n\n', '\n')
-													: e.detail
+													? userPrompt.replaceAll('\n\n', '\n')
+													: userPrompt
 											);
 										}
 									}}
@@ -2282,12 +2285,15 @@
 										}
 									}}
 									on:submit={async (e) => {
-										if (e.detail || files.length > 0) {
+										const { prompt: userPrompt, params: newParams } = e.detail;
+
+										if (userPrompt || files.length > 0) {
+											params = newParams; // Explicitly update the parent's params state
 											await tick();
 											submitPrompt(
 												($settings?.richTextInput ?? true)
-													? e.detail.replaceAll('\n\n', '\n')
-													: e.detail
+													? userPrompt.replaceAll('\n\n', '\n')
+													: userPrompt
 											);
 										}
 									}}
